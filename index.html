@@ -5,26 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Senza Gluten - Gestión</title>
 <style>
-/* --- ESTILOS DE MARCA Y COLORES (Basados en image_8.png) --- */
+/* --- ESTILOS DE MARCA Y COLORES --- */
 body {
     font-family: 'Times New Roman', Times, serif;
     padding: 10px;
-    background-color: #f7f6f1; /* Crema suave */
+    background-color: #f7f6f1;
     color: #333;
 }
 
-/* --- DISEÑO DEL LOGO Y TÍTULO --- */
 .header-container {
     display: flex;
-    flex-direction: column; /* Centrado vertical */
-    align-items: center; /* Centrado horizontal */
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     margin-bottom: 25px;
     text-align: center;
 }
 
 .logo {
-    max-width: 150px; /* Tamaño del logo */
+    max-width: 150px;
     height: auto;
     margin-bottom: 10px;
 }
@@ -36,15 +35,14 @@ body {
     margin: 0;
 }
 
-/* --- ESTILOS DE NAVEGACIÓN (En una sola fila) --- */
 nav {
     display: flex;
-    justify-content: space-around; /* Distribución uniforme */
+    justify-content: space-around;
     border-bottom: 2px solid #ddd;
     margin-bottom: 20px;
     background-color: #fdfdfc;
     padding: 10px 0;
-    flex-wrap: wrap; /* Para que no se corte en móviles */
+    flex-wrap: wrap;
 }
 
 .tab-btn {
@@ -65,11 +63,10 @@ nav {
 }
 
 .tab-btn.active {
-    color: #79a140; /* Verde oliva activo */
+    color: #79a140;
     border-bottom: 3px solid #79a140;
 }
 
-/* --- ESTILOS DE CONTENIDO --- */
 .tab-content {
     display: none;
     padding: 20px;
@@ -89,13 +86,13 @@ input, select {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    box-sizing: border-box; /* Importante para el tamaño de inputs */
+    box-sizing: border-box;
 }
 
 button {
     width: 100%;
     padding: 12px;
-    background-color: #79a140; /* Verde oliva logo */
+    background-color: #79a140;
     color: white;
     border: none;
     cursor: pointer;
@@ -135,10 +132,8 @@ th {
     text-align: center;
 }
 
-/* Estilo para botones de acción en tabla */
 .btn-action { width: auto; padding: 5px; font-size: 12px; margin: 2px; }
 
-/* Panel de Pedidos */
 #panelPedido { 
     background: #fdfdfc; 
     border: 2px solid #79a140; 
@@ -196,7 +191,7 @@ th {
     <button onclick="guardarProd()">Guardar Producto</button>
     
     <table>
-        <thead><tr><th>Prod</th><th>Stock</th><th>Precio</th><th>Costo</th><th>Ganancia</th></tr></thead>
+        <thead><tr><th>Prod</th><th>Stock</th><th>Precio</th><th>Costo</th><th>Ganancia</th><th>Acciones</th></tr></thead>
         <tbody id="cuerpoTablaProd"></tbody>
     </table>
 </div>
@@ -293,8 +288,6 @@ function editarProv(i) {
     mostrarProvs();
 }
 
-// --- PEDIDOS ---
-let provActualIndex = -1;
 function abrirPanelPedido(i) {
     provActualIndex = i;
     let provs = JSON.parse(localStorage.getItem('provs'));
@@ -367,7 +360,7 @@ function guardarProd() {
 function mostrarProds() {
     let prods = JSON.parse(localStorage.getItem('prods') || '[]');
     let tbody = document.getElementById('cuerpoTablaProd');
-    tbody.innerHTML = prods.map(p => {
+    tbody.innerHTML = prods.map((p, i) => {
         let ganancia = p.precio - p.costo;
         return `<tr>
             <td>${p.nombre}</td>
@@ -375,8 +368,34 @@ function mostrarProds() {
             <td>$${p.precio}</td>
             <td>$${p.costo}</td>
             <td>$${ganancia}</td>
+            <td>
+                <button class="btn-action" onclick="editarProd(${i})">Edit</button>
+                <button class="btn-action" onclick="borrarProd(${i})" style="background:#cc0000">X</button>
+            </td>
         </tr>`;
     }).join('');
+}
+
+function editarProd(i) {
+    let prods = JSON.parse(localStorage.getItem('prods'));
+    let p = prods[i];
+    p.nombre = prompt("Nombre:", p.nombre) || p.nombre;
+    p.precio = parseFloat(prompt("Precio Venta:", p.precio)) || p.precio;
+    p.costo = parseFloat(prompt("Costo:", p.costo)) || p.costo;
+    p.stock = parseInt(prompt("Stock:", p.stock)) || p.stock;
+    localStorage.setItem('prods', JSON.stringify(prods));
+    mostrarProds();
+    actualizarSelect();
+}
+
+function borrarProd(i) {
+    if(confirm("¿Borrar producto?")) {
+        let prods = JSON.parse(localStorage.getItem('prods'));
+        prods.splice(i, 1);
+        localStorage.setItem('prods', JSON.stringify(prods));
+        mostrarProds();
+        actualizarSelect();
+    }
 }
 
 // --- VENTAS ---
@@ -407,6 +426,7 @@ function realizarVenta() {
         document.getElementById('cantVenta').value = '';
         alert("Venta registrada");
         actualizarSelect();
+        mostrarProds();
     } else { alert("¡Stock insuficiente!"); }
 }
 
