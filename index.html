@@ -137,6 +137,15 @@ th {
 
 /* Estilo para botones de acción en tabla */
 .btn-action { width: auto; padding: 5px; font-size: 12px; margin: 2px; }
+
+/* Panel de Pedidos */
+#panelPedido { 
+    background: #fdfdfc; 
+    border: 2px solid #79a140; 
+    padding: 20px; 
+    margin-top: 20px; 
+    display: none; 
+}
 </style>
 </head>
 <body>
@@ -164,6 +173,13 @@ th {
         <thead><tr><th>Nombre</th><th>Tel</th><th>Dir</th><th>Productos</th><th>Acciones</th></tr></thead>
         <tbody id="cuerpoTablaProv"></tbody>
     </table>
+
+    <div id="panelPedido">
+        <h3>Pedido a: <span id="nombreProvPedido"></span></h3>
+        <div id="listaProductosPedido"></div>
+        <button onclick="generarExcelPedido()" style="background:#28a745">📥 Descargar Pedido (Excel/CSV)</button>
+        <button onclick="document.getElementById('panelPedido').style.display='none'" style="background:#666">Cerrar</button>
+    </div>
 </div>
 
 <div id="prod" class="tab-content">
@@ -231,7 +247,7 @@ function mostrarProvs() {
         <td>${p.nombre}</td><td>${p.tel}</td><td>${p.dir}</td><td>${p.prods}</td>
         <td>
             <button class="btn-action" onclick="editarProv(${i})">Edit</button>
-            <button class="btn-action" onclick="hacerPedido(${i})">Pedido</button>
+            <button class="btn-action" onclick="abrirPanelPedido(${i})">Pedido</button>
             <button class="btn-action" onclick="borrarProv(${i})" style="background:#cc0000">X</button>
         </td>
     </tr>`).join('');
@@ -243,18 +259,51 @@ function editarProv(i) {
     p.nombre = prompt("Nombre:", p.nombre) || p.nombre;
     p.tel = prompt("Teléfono:", p.tel) || p.tel;
     p.dir = prompt("Dirección:", p.dir) || p.dir;
-    p.prods = prompt("Productos:", p.prods) || p.prods;
+    p.prods = prompt("Productos (separados por coma):", p.prods) || p.prods;
     localStorage.setItem('provs', JSON.stringify(provs));
     mostrarProvs();
 }
 
-function hacerPedido(i) {
+// --- PEDIDOS NUEVA FUNCIÓN ---
+let provActualIndex = -1;
+function abrirPanelPedido(i) {
+    provActualIndex = i;
     let provs = JSON.parse(localStorage.getItem('provs'));
-    let pedido = prompt("¿Qué querés pedir a " + provs[i].nombre + "?");
-    if(pedido) {
-        alert("Pedido anotado para " + provs[i].nombre + ": " + pedido);
-        // Aquí podrías guardar el pedido en otra tabla si quisieras
-    }
+    let p = provs[i];
+    document.getElementById('nombreProvPedido').innerText = p.nombre;
+    
+    // Obtener productos
+    let lista = p.prods.split(',').map(s => s.trim()).filter(s => s !== "");
+    
+    let html = '<table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>';
+    lista.forEach((item, idx) => {
+        html += `<tr><td>${item}</td><td><input type="number" class="input-cant" data-prod="${item}" value="0" style="width:60px; padding:5px;"></td></tr>`;
+    });
+    html += '</tbody></table>';
+    
+    document.getElementById('listaProductosPedido').innerHTML = html;
+    document.getElementById('panelPedido').style.display = 'block';
+}
+
+function generarExcelPedido() {
+    let provs = JSON.parse(localStorage.getItem('provs'));
+    let nombreProv = provs[provActualIndex].nombre;
+    let rows = [["Producto", "Cantidad"]];
+    
+    document.querySelectorAll('.input-cant').forEach(input => {
+        if(input.value > 0) rows.push([input.dataset.prod, input.value]);
+    });
+    
+    if(rows.length === 1) return alert("El pedido está vacío.");
+
+    let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Pedido_${nombreProv}_${new Date().toLocaleDateString().replace(/\//g,'-')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 }
 
 function borrarProv(i) {
