@@ -134,6 +134,9 @@ th {
     padding-top: 15px;
     text-align: center;
 }
+
+/* Estilo para botones de acción en tabla */
+.btn-action { width: auto; padding: 5px; font-size: 12px; margin: 2px; }
 </style>
 </head>
 <body>
@@ -151,10 +154,16 @@ th {
 </nav>
 
 <div id="prov" class="tab-content show">
-    <h3>Alta Proveedores</h3>
+    <h3>Gestión de Proveedores</h3>
     <input type="text" id="nombreProv" placeholder="Nombre Proveedor">
-    <button onclick="guardarProv()">Guardar</button>
-    <ul id="listaProv"></ul>
+    <input type="text" id="telProv" placeholder="Teléfono">
+    <input type="text" id="dirProv" placeholder="Dirección">
+    <input type="text" id="prodProv" placeholder="Productos (separados por coma)">
+    <button onclick="guardarProv()">Guardar Proveedor</button>
+    <table>
+        <thead><tr><th>Nombre</th><th>Tel</th><th>Dir</th><th>Productos</th><th>Acciones</th></tr></thead>
+        <tbody id="cuerpoTablaProv"></tbody>
+    </table>
 </div>
 
 <div id="prod" class="tab-content">
@@ -198,18 +207,63 @@ function verTab(id) {
 
 // --- PROVEEDORES ---
 function guardarProv() {
-    let prov = document.getElementById('nombreProv').value;
-    if(!prov) return;
+    let prov = {
+        nombre: document.getElementById('nombreProv').value,
+        tel: document.getElementById('telProv').value,
+        dir: document.getElementById('dirProv').value,
+        prods: document.getElementById('prodProv').value
+    };
+    if(!prov.nombre) return alert("Nombre obligatorio");
     let provs = JSON.parse(localStorage.getItem('provs') || '[]');
     provs.push(prov);
     localStorage.setItem('provs', JSON.stringify(provs));
     document.getElementById('nombreProv').value = '';
+    document.getElementById('telProv').value = '';
+    document.getElementById('dirProv').value = '';
+    document.getElementById('prodProv').value = '';
     mostrarProvs();
 }
+
 function mostrarProvs() {
     let provs = JSON.parse(localStorage.getItem('provs') || '[]');
-    let lista = document.getElementById('listaProv');
-    lista.innerHTML = provs.map(p => `<li>${p}</li>`).join('');
+    let tbody = document.getElementById('cuerpoTablaProv');
+    tbody.innerHTML = provs.map((p, i) => `<tr>
+        <td>${p.nombre}</td><td>${p.tel}</td><td>${p.dir}</td><td>${p.prods}</td>
+        <td>
+            <button class="btn-action" onclick="editarProv(${i})">Edit</button>
+            <button class="btn-action" onclick="hacerPedido(${i})">Pedido</button>
+            <button class="btn-action" onclick="borrarProv(${i})" style="background:#cc0000">X</button>
+        </td>
+    </tr>`).join('');
+}
+
+function editarProv(i) {
+    let provs = JSON.parse(localStorage.getItem('provs'));
+    let p = provs[i];
+    p.nombre = prompt("Nombre:", p.nombre) || p.nombre;
+    p.tel = prompt("Teléfono:", p.tel) || p.tel;
+    p.dir = prompt("Dirección:", p.dir) || p.dir;
+    p.prods = prompt("Productos:", p.prods) || p.prods;
+    localStorage.setItem('provs', JSON.stringify(provs));
+    mostrarProvs();
+}
+
+function hacerPedido(i) {
+    let provs = JSON.parse(localStorage.getItem('provs'));
+    let pedido = prompt("¿Qué querés pedir a " + provs[i].nombre + "?");
+    if(pedido) {
+        alert("Pedido anotado para " + provs[i].nombre + ": " + pedido);
+        // Aquí podrías guardar el pedido en otra tabla si quisieras
+    }
+}
+
+function borrarProv(i) {
+    if(confirm("¿Borrar proveedor?")) {
+        let provs = JSON.parse(localStorage.getItem('provs'));
+        provs.splice(i, 1);
+        localStorage.setItem('provs', JSON.stringify(provs));
+        mostrarProvs();
+    }
 }
 
 // --- PRODUCTOS ---
