@@ -2,62 +2,131 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Gestion Dietetica</title>
+<title>Senza Gluten - Gestión</title>
 <style>
-body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-input { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-.btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px; cursor: pointer; }
+body { font-family: sans-serif; padding: 10px; background-color: #f4f4f9; }
+.tab-btn { padding: 10px; cursor: pointer; border: none; background: #ddd; margin-right: 5px; }
+.active { background: #28a745; color: white; }
+.tab-content { display: none; padding: 20px; background: white; border: 1px solid #ddd; }
+.show { display: block; }
+input, select { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
+button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
 </style>
 </head>
 <body>
-<h2>📦 Gestión Dietética</h2>
-<input type="text" id="producto" placeholder="Nombre del Producto">
-<input type="number" id="cantidad" placeholder="Cantidad (gr/kg)">
-<button onclick="guardarDato()">Guardar Producto</button>
-<button onclick="descargarCSV()" style="background-color: #007bff; margin-top:10px;">Descargar en Excel</button>
-<table>
-<thead><tr><th>Producto</th><th>Cant.</th><th>X</th></tr></thead>
-<tbody id="cuerpoTabla"></tbody>
-</table>
+
+<h2>📦 Senza Gluten - Gestión</h2>
+<nav>
+    <button class="tab-btn active" onclick="verTab('prov')">Proveedores</button>
+    <button class="tab-btn" onclick="verTab('prod')">Productos</button>
+    <button class="tab-btn" onclick="verTab('venta')">Ventas</button>
+    <button class="tab-btn" onclick="verTab('caja')">Caja</button>
+</nav>
+
+<div id="prov" class="tab-content show">
+    <h3>Alta Proveedores</h3>
+    <input type="text" id="nombreProv" placeholder="Nombre Proveedor">
+    <button onclick="guardarProv()">Guardar</button>
+    <ul id="listaProv"></ul>
+</div>
+
+<div id="prod" class="tab-content">
+    <h3>Carga Productos</h3>
+    <input type="text" id="nombreProd" placeholder="Nombre Producto">
+    <input type="number" id="precioProd" placeholder="Precio">
+    <input type="number" id="stockProd" placeholder="Stock Inicial">
+    <button onclick="guardarProd()">Guardar Producto</button>
+    <table id="tablaProd"><thead><tr><th>Prod</th><th>Stock</th><th>Precio</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div id="venta" class="tab-content">
+    <h3>Registrar Venta</h3>
+    <select id="selectProd"></select>
+    <input type="number" id="cantVenta" placeholder="Cantidad">
+    <button onclick="realizarVenta()">Vender</button>
+</div>
+
+<div id="caja" class="tab-content">
+    <h3>Cierre de Caja Diario</h3>
+    <div id="resumenCaja"></div>
+</div>
+
 <script>
-function guardarDato() {
-let prod = document.getElementById("producto").value;
-let cant = document.getElementById("cantidad").value;
-if(!prod || !cant) return alert("Completá ambos campos");
-let inv = JSON.parse(localStorage.getItem("inv")) || [];
-inv.push({p: prod, c: cant});
-localStorage.setItem("inv", JSON.stringify(inv));
-document.getElementById("producto").value = "";
-document.getElementById("cantidad").value = "";
-mostrar();
+// --- LÓGICA DE NAVEGACIÓN ---
+function verTab(id) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('show'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('show');
+    event.target.classList.add('active');
+    if(id === 'venta') actualizarSelect();
+    if(id === 'caja') calcularCaja();
 }
-function mostrar() {
-let inv = JSON.parse(localStorage.getItem("inv")) || [];
-let cuerpo = document.getElementById("cuerpoTabla");
-cuerpo.innerHTML = "";
-inv.forEach((item, i) => {
-cuerpo.innerHTML += `<tr><td>${item.p}</td><td>${item.c}</td><td><button class='btn-delete' onclick='borrar(${i})'>X</button></td></tr>`;
-});
+
+// --- PROVEEDORES ---
+function guardarProv() {
+    let provs = JSON.parse(localStorage.getItem('provs') || '[]');
+    provs.push(document.getElementById('nombreProv').value);
+    localStorage.setItem('provs', JSON.stringify(provs));
+    location.reload();
 }
-function borrar(i) {
-let inv = JSON.parse(localStorage.getItem("inv"));
-inv.splice(i, 1);
-localStorage.setItem("inv", JSON.stringify(inv));
-mostrar();
+
+// --- PRODUCTOS ---
+function guardarProd() {
+    let prods = JSON.parse(localStorage.getItem('prods') || '[]');
+    prods.push({
+        nombre: document.getElementById('nombreProd').value,
+        precio: parseFloat(document.getElementById('precioProd').value),
+        stock: parseInt(document.getElementById('stockProd').value)
+    });
+    localStorage.setItem('prods', JSON.stringify(prods));
+    location.reload();
 }
-function descargarCSV() {
-let inv = JSON.parse(localStorage.getItem("inv")) || [];
-let csv = "Producto,Cantidad\n";
-inv.forEach(i => csv += `${i.p},${i.c}\n`);
-let a = document.createElement('a');
-a.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
-a.download = 'inventario.csv';
-a.click();
+
+// --- VENTAS ---
+function actualizarSelect() {
+    let prods = JSON.parse(localStorage.getItem('prods') || '[]');
+    let sel = document.getElementById('selectProd');
+    sel.innerHTML = prods.map((p, i) => `<option value="${i}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
 }
-mostrar();
+
+function realizarVenta() {
+    let index = document.getElementById('selectProd').value;
+    let cant = parseInt(document.getElementById('cantVenta').value);
+    let prods = JSON.parse(localStorage.getItem('prods'));
+    
+    if(prods[index].stock >= cant) {
+        prods[index].stock -= cant;
+        let venta = { 
+            prod: prods[index].nombre, 
+            total: cant * prods[index].precio, 
+            fecha: new Date().toLocaleDateString() 
+        };
+        let ventas = JSON.parse(localStorage.getItem('ventas') || '[]');
+        ventas.push(venta);
+        localStorage.setItem('prods', JSON.stringify(prods));
+        localStorage.setItem('ventas', JSON.stringify(ventas));
+        alert("Venta registrada");
+        location.reload();
+    } else { alert("¡Stock insuficiente!"); }
+}
+
+// --- CAJA ---
+function calcularCaja() {
+    let ventas = JSON.parse(localStorage.getItem('ventas') || '[]');
+    let hoy = new Date().toLocaleDateString();
+    let total = ventas.filter(v => v.fecha === hoy).reduce((acc, v) => acc + v.total, 0);
+    document.getElementById('resumenCaja').innerHTML = `<h4>Total ventas hoy: $${total}</h4>`;
+}
+
+// --- CARGA INICIAL ---
+function init() {
+    let prods = JSON.parse(localStorage.getItem('prods') || '[]');
+    let tbody = document.querySelector('#tablaProd tbody');
+    tbody.innerHTML = prods.map(p => `<tr><td>${p.nombre}</td><td>${p.stock}</td><td>$${p.precio}</td></tr>`).join('');
+}
+init();
 </script>
 </body>
 </html>
