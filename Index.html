@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gestion Dietetica</title>
+<style>
+body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+input { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+.btn-delete { background-color: #dc3545; color: white; border: none; padding: 5px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>📦 Gestión Dietética</h2>
+<input type="text" id="producto" placeholder="Nombre del Producto">
+<input type="number" id="cantidad" placeholder="Cantidad (gr/kg)">
+<button onclick="guardarDato()">Guardar Producto</button>
+<button onclick="descargarCSV()" style="background-color: #007bff; margin-top:10px;">Descargar en Excel</button>
+<table>
+<thead><tr><th>Producto</th><th>Cant.</th><th>X</th></tr></thead>
+<tbody id="cuerpoTabla"></tbody>
+</table>
+<script>
+function guardarDato() {
+let prod = document.getElementById("producto").value;
+let cant = document.getElementById("cantidad").value;
+if(!prod || !cant) return alert("Completá ambos campos");
+let inv = JSON.parse(localStorage.getItem("inv")) || [];
+inv.push({p: prod, c: cant});
+localStorage.setItem("inv", JSON.stringify(inv));
+document.getElementById("producto").value = "";
+document.getElementById("cantidad").value = "";
+mostrar();
+}
+function mostrar() {
+let inv = JSON.parse(localStorage.getItem("inv")) || [];
+let cuerpo = document.getElementById("cuerpoTabla");
+cuerpo.innerHTML = "";
+inv.forEach((item, i) => {
+cuerpo.innerHTML += `<tr><td>${item.p}</td><td>${item.c}</td><td><button class='btn-delete' onclick='borrar(${i})'>X</button></td></tr>`;
+});
+}
+function borrar(i) {
+let inv = JSON.parse(localStorage.getItem("inv"));
+inv.splice(i, 1);
+localStorage.setItem("inv", JSON.stringify(inv));
+mostrar();
+}
+function descargarCSV() {
+let inv = JSON.parse(localStorage.getItem("inv")) || [];
+let csv = "Producto,Cantidad\n";
+inv.forEach(i => csv += `${i.p},${i.c}\n`);
+let a = document.createElement('a');
+a.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+a.download = 'inventario.csv';
+a.click();
+}
+mostrar();
+</script>
+</body>
+</html>
