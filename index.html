@@ -7,45 +7,69 @@
 <style>
 /* --- ESTILOS DE MARCA Y COLORES (Basados en image_8.png) --- */
 body {
-    font-family: 'Times New Roman', Times, serif; /* Fuente cursiva elegante */
+    font-family: 'Times New Roman', Times, serif;
     padding: 10px;
-    background-color: #f7f6f1; /* Crema muy suave de fondo */
+    background-color: #f7f6f1; /* Crema suave */
     color: #333;
+}
+
+/* --- DISEÑO DEL LOGO Y TÍTULO --- */
+.header-container {
+    display: flex;
+    flex-direction: column; /* Centrado vertical */
+    align-items: center; /* Centrado horizontal */
+    justify-content: center;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.logo {
+    max-width: 150px; /* Tamaño del logo */
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.main-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
 }
 
 /* --- ESTILOS DE NAVEGACIÓN (En una sola fila) --- */
 nav {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-around; /* Distribución uniforme */
     border-bottom: 2px solid #ddd;
     margin-bottom: 20px;
-    background-color: #fdfdfc; /* Fondo suave para menú */
-    padding: 5px 0;
+    background-color: #fdfdfc;
+    padding: 10px 0;
+    flex-wrap: wrap; /* Para que no se corte en móviles */
 }
 
 .tab-btn {
-    padding: 12px 18px;
+    padding: 10px 15px;
     cursor: pointer;
     border: none;
-    background: none; /* Sin fondo por defecto */
-    color: #555; /* Color de texto suave */
+    background: none;
+    color: #555;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 15px;
     transition: color 0.3s;
-    border-bottom: 3px solid transparent; /* Línea inferior invisible */
+    border-bottom: 3px solid transparent;
     font-family: 'Times New Roman', Times, serif;
 }
 
 .tab-btn:hover {
-    color: #8cba51; /* Verde más vivo al pasar el mouse */
+    color: #8cba51;
 }
 
 .tab-btn.active {
-    color: #79a140; /* Verde oliva de las hojas para la pestaña activa */
-    border-bottom: 3px solid #79a140; /* Línea verde oliva */
+    color: #79a140; /* Verde oliva activo */
+    border-bottom: 3px solid #79a140;
 }
 
-/* --- ESTILOS DE CONTENIDO Y TABLAS --- */
+/* --- ESTILOS DE CONTENIDO --- */
 .tab-content {
     display: none;
     padding: 20px;
@@ -65,12 +89,13 @@ input, select {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    box-sizing: border-box; /* Importante para el tamaño de inputs */
 }
 
 button {
     width: 100%;
     padding: 12px;
-    background-color: #79a140; /* Verde oliva del logo */
+    background-color: #79a140; /* Verde oliva logo */
     color: white;
     border: none;
     cursor: pointer;
@@ -82,7 +107,7 @@ button {
 }
 
 button:hover {
-    background-color: #6b8d38; /* Verde ligeramente más oscuro */
+    background-color: #6b8d38;
 }
 
 table {
@@ -90,11 +115,12 @@ table {
     border-collapse: collapse;
     margin-top: 15px;
     background-color: white;
+    font-size: 14px;
 }
 
 th, td {
     border: 1px solid #ddd;
-    padding: 12px;
+    padding: 10px;
     text-align: left;
 }
 
@@ -106,33 +132,15 @@ th {
     margin-top: 40px;
     border-top: 2px solid #ddd;
     padding-top: 15px;
-}
-
-/* --- DISEÑO DEL LOGO Y TÍTULO --- */
-.logo-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-.logo {
-    max-width: 80px; /* Ajusta el tamaño según necesites */
-    margin-right: 15px;
-}
-
-.main-title {
-    font-size: 28px;
-    font-weight: bold;
-    color: #333;
+    text-align: center;
 }
 </style>
 </head>
 <body>
 
-<div class="logo-container">
-    <img src="imagen_del_logo_aqui.png" alt="" class="logo">
-    <h2 class="main-title">📦 Senza Gluten - Gestión</h2>
+<div class="header-container">
+    <img src="IMG-20260214-WA0059.jpg" alt="Logo Senza Gluten" class="logo">
+    <h1 class="main-title">Sistema de Gestión</h1>
 </div>
 
 <nav>
@@ -155,7 +163,7 @@ th {
     <input type="number" id="precioProd" placeholder="Precio">
     <input type="number" id="stockProd" placeholder="Stock Inicial">
     <button onclick="guardarProd()">Guardar Producto</button>
-    <table id="tablaProd"><thead><tr><th>Prod</th><th>Stock</th><th>Precio</th></tr></thead><tbody></tbody></table>
+    <table><thead><tr><th>Prod</th><th>Stock</th><th>Precio</th></tr></thead><tbody id="cuerpoTablaProd"></tbody></table>
 </div>
 
 <div id="venta" class="tab-content">
@@ -188,64 +196,58 @@ function verTab(id) {
     if(id === 'caja') calcularCaja();
 }
 
-// --- FUNCIONES BACKUP ---
-function exportarDatos() {
-    let datos = {
-        provs: localStorage.getItem('provs'),
-        prods: localStorage.getItem('prods'),
-        ventas: localStorage.getItem('ventas')
-    };
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datos));
-    let downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "backup_gestion_senzagluten.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-}
-
-function importarDatos(event) {
-    let reader = new FileReader();
-    reader.onload = function(e) {
-        let datos = JSON.parse(e.target.result);
-        localStorage.setItem('provs', datos.provs);
-        localStorage.setItem('prods', datos.prods);
-        localStorage.setItem('ventas', datos.ventas);
-        alert("Datos restaurados correctamente");
-        location.reload();
-    };
-    reader.readAsText(event.target.files[0]);
-}
-
-// --- LÓGICA DE NEGOCIO ---
+// --- PROVEEDORES ---
 function guardarProv() {
+    let prov = document.getElementById('nombreProv').value;
+    if(!prov) return;
     let provs = JSON.parse(localStorage.getItem('provs') || '[]');
-    provs.push(document.getElementById('nombreProv').value);
+    provs.push(prov);
     localStorage.setItem('provs', JSON.stringify(provs));
-    location.reload();
+    document.getElementById('nombreProv').value = '';
+    mostrarProvs();
+}
+function mostrarProvs() {
+    let provs = JSON.parse(localStorage.getItem('provs') || '[]');
+    let lista = document.getElementById('listaProv');
+    lista.innerHTML = provs.map(p => `<li>${p}</li>`).join('');
 }
 
+// --- PRODUCTOS ---
 function guardarProd() {
+    let nombre = document.getElementById('nombreProd').value;
+    let precio = parseFloat(document.getElementById('precioProd').value);
+    let stock = parseInt(document.getElementById('stockProd').value);
+    if(!nombre || isNaN(precio) || isNaN(stock)) return alert("Completá todos los campos");
+
     let prods = JSON.parse(localStorage.getItem('prods') || '[]');
-    prods.push({
-        nombre: document.getElementById('nombreProd').value,
-        precio: parseFloat(document.getElementById('precioProd').value),
-        stock: parseInt(document.getElementById('stockProd').value)
-    });
+    prods.push({nombre, precio, stock});
     localStorage.setItem('prods', JSON.stringify(prods));
-    location.reload();
+    
+    document.getElementById('nombreProd').value = '';
+    document.getElementById('precioProd').value = '';
+    document.getElementById('stockProd').value = '';
+    mostrarProds();
+}
+function mostrarProds() {
+    let prods = JSON.parse(localStorage.getItem('prods') || '[]');
+    let tbody = document.getElementById('cuerpoTablaProd');
+    tbody.innerHTML = prods.map(p => `<tr><td>${p.nombre}</td><td>${p.stock}</td><td>$${p.precio}</td></tr>`).join('');
 }
 
+// --- VENTAS ---
 function actualizarSelect() {
     let prods = JSON.parse(localStorage.getItem('prods') || '[]');
     let sel = document.getElementById('selectProd');
-    sel.innerHTML = prods.map((p, i) => `<option value="${i}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
+    sel.innerHTML = '<option value="">Seleccioná un producto...</option>' + 
+                   prods.map((p, i) => `<option value="${i}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
 }
 
 function realizarVenta() {
     let index = document.getElementById('selectProd').value;
     let cant = parseInt(document.getElementById('cantVenta').value);
     let prods = JSON.parse(localStorage.getItem('prods'));
+    
+    if(index === "" || isNaN(cant) || cant <= 0) return alert("Seleccioná producto y cantidad");
     if(prods[index].stock >= cant) {
         prods[index].stock -= cant;
         let venta = { 
@@ -257,24 +259,56 @@ function realizarVenta() {
         ventas.push(venta);
         localStorage.setItem('prods', JSON.stringify(prods));
         localStorage.setItem('ventas', JSON.stringify(ventas));
+        document.getElementById('cantVenta').value = '';
         alert("Venta registrada");
-        location.reload();
+        actualizarSelect();
     } else { alert("¡Stock insuficiente!"); }
 }
 
+// --- CAJA ---
 function calcularCaja() {
     let ventas = JSON.parse(localStorage.getItem('ventas') || '[]');
     let hoy = new Date().toLocaleDateString();
-    let total = ventas.filter(v => v.fecha === hoy).reduce((acc, v) => acc + v.total, 0);
-    document.getElementById('resumenCaja').innerHTML = `<h4>Total ventas hoy: $${total}</h4>`;
+    let ventasHoy = ventas.filter(v => v.fecha === hoy);
+    let total = ventasHoy.reduce((acc, v) => acc + v.total, 0);
+    
+    let resumenHtml = `<h4>Ventas de hoy (${hoy}):</h4>`;
+    resumenHtml += `<ul>` + ventasHoy.map(v => `<li>${v.prod}: $${v.total}</li>`).join('') + `</ul>`;
+    resumenHtml += `<h3>Total recaudado: $${total}</h3>`;
+    
+    document.getElementById('resumenCaja').innerHTML = resumenHtml;
 }
 
-function init() {
-    let prods = JSON.parse(localStorage.getItem('prods') || '[]');
-    let tbody = document.querySelector('#tablaProd tbody');
-    tbody.innerHTML = prods.map(p => `<tr><td>${p.nombre}</td><td>${p.stock}</td><td>$${p.precio}</td></tr>`).join('');
+// --- BACKUP ---
+function exportarDatos() {
+    let datos = {
+        provs: localStorage.getItem('provs'),
+        prods: localStorage.getItem('prods'),
+        ventas: localStorage.getItem('ventas')
+    };
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datos));
+    let a = document.createElement('a');
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", "backup_senzagluten.json");
+    a.click();
 }
-init();
+
+function importarDatos(event) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let datos = JSON.parse(e.target.result);
+        localStorage.setItem('provs', datos.provs);
+        localStorage.setItem('prods', datos.prods);
+        localStorage.setItem('ventas', datos.ventas);
+        alert("Datos restaurados. Se recargará la página.");
+        location.reload();
+    };
+    reader.readAsText(event.target.files[0]);
+}
+
+// --- CARGA INICIAL ---
+mostrarProvs();
+mostrarProds();
 </script>
 </body>
 </html>
