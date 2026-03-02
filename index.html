@@ -204,8 +204,14 @@ th {
 </div>
 
 <div id="caja" class="tab-content">
-    <h3>Cierre de Caja Diario</h3>
+    <h3>Cierre de Caja</h3>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button onclick="calcularCaja('hoy')">Hoy</button>
+        <button onclick="calcularCaja('semana')">Semana</button>
+        <button onclick="calcularCaja('mes')">Mes</button>
+    </div>
     <div id="resumenCaja"></div>
+    <button id="btnDescargarCaja" onclick="descargarCaja()" style="background:#28a745; display:none;">📥 Descargar Reporte Excel</button>
 </div>
 
 <div class="backup-section">
@@ -223,7 +229,6 @@ function verTab(id) {
     document.getElementById(id).classList.add('show');
     event.target.classList.add('active');
     if(id === 'venta') actualizarSelect();
-    if(id === 'caja') calcularCaja();
 }
 
 // --- BUSCADORES ---
@@ -431,17 +436,68 @@ function realizarVenta() {
 }
 
 // --- CAJA ---
-function calcularCaja() {
+let periodoActual = '';
+function calcularCaja(periodo) {
+    periodoActual = periodo;
     let ventas = JSON.parse(localStorage.getItem('ventas') || '[]');
-    let hoy = new Date().toLocaleDateString();
-    let ventasHoy = ventas.filter(v => v.fecha === hoy);
-    let total = ventasHoy.reduce((acc, v) => acc + v.total, 0);
+    let hoy = new Date();
     
-    let resumenHtml = `<h4>Ventas de hoy (${hoy}):</h4>`;
-    resumenHtml += `<ul>` + ventasHoy.map(v => `<li>${v.prod}: $${v.total}</li>`).join('') + `</ul>`;
-    resumenHtml += `<h3>Total recaudado: $${total}</h3>`;
+    // Función para convertir fecha string "DD/MM/YYYY" a objeto Date
+    function toDate(str) {
+        let parts = str.split('/');
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+    }
+
+    let filtradas = ventas.filter(v => {
+        let d = toDate(v.fecha);
+        if (periodo === 'hoy') return v.fecha === hoy.toLocaleDateString();
+        if (periodo === 'semana') {
+            let startOfWeek = new Date(hoy);
+            startOfWeek.setDate(hoy.getDate() - hoy.getDay());
+            return d >= startOfWeek;
+        }
+        if (periodo === 'mes') return d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear();
+        return false;
+    });
+
+    let total = filtradas.reduce((acc, v) => acc + v.total, 0);
+    
+    let resumenHtml = `<h4>Reporte (${periodo}):</h4>`;
+    resumenHtml += `<ul>` + filtradas.map(v => `<li>${v.fecha} - ${v.prod}: $${v.total}</li>`).join('') + `</ul>`;
+    resumenHtml += `<h3>Total: $${total}</h3>`;
     
     document.getElementById('resumenCaja').innerHTML = resumenHtml;
+    document.getElementById('btnDescargarCaja').style.display = 'block';
+}
+
+function descargarCaja() {
+    let ventas = JSON.parse(localStorage.getItem('ventas') || '[]');
+    let hoy = new Date();
+    function toDate(str) { let parts = str.split('/'); return new Date(parts[2], parts[1] - 1, parts[0]); }
+    
+    let filtradas = ventas.filter(v => {
+        let d = toDate(v.fecha);
+        if (periodoActual === 'hoy') return v.fecha === hoy.toLocaleDateString();
+        if (periodoActual === 'semana') {
+            let startOfWeek = new Date(hoy);
+            startOfWeek.setDate(hoy.getDate() - hoy.getDay());
+            return d >= startOfWeek;
+        }
+        if (periodoActual === 'mes') return d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear();
+        return false;
+    });
+
+    let rows = [["Fecha", "Producto", "Total"]];
+    filtradas.forEach(v => rows.push([v.fecha, v.prod, v.total]));
+    
+    let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Reporte_Caja_${periodoActual}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 }
 
 // --- BACKUP ---
