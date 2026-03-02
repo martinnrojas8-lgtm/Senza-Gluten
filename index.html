@@ -10,9 +10,10 @@ body { font-family: sans-serif; padding: 10px; background-color: #f4f4f9; }
 .tab-content { display: none; padding: 20px; background: white; border: 1px solid #ddd; }
 .show { display: block; }
 input, select { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
-button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; margin-top: 5px; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+.backup-section { margin-top: 30px; border-top: 2px solid #ccc; padding-top: 10px; }
 </style>
 </head>
 <body>
@@ -53,8 +54,15 @@ th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     <div id="resumenCaja"></div>
 </div>
 
+<div class="backup-section">
+    <h3>Respaldo de Datos (Seguridad)</h3>
+    <button style="background-color: #ff9800;" onclick="exportarDatos()">📥 Descargar Backup (Guardar)</button>
+    <p>Subir Backup (Restaurar):</p>
+    <input type="file" id="inputArchivo" onchange="importarDatos(event)">
+</div>
+
 <script>
-// --- LÓGICA DE NAVEGACIÓN ---
+// --- NAVEGACIÓN ---
 function verTab(id) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('show'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -64,7 +72,36 @@ function verTab(id) {
     if(id === 'caja') calcularCaja();
 }
 
-// --- PROVEEDORES ---
+// --- FUNCIONES BACKUP ---
+function exportarDatos() {
+    let datos = {
+        provs: localStorage.getItem('provs'),
+        prods: localStorage.getItem('prods'),
+        ventas: localStorage.getItem('ventas')
+    };
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datos));
+    let downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "backup_gestion.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function importarDatos(event) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let datos = JSON.parse(e.target.result);
+        localStorage.setItem('provs', datos.provs);
+        localStorage.setItem('prods', datos.prods);
+        localStorage.setItem('ventas', datos.ventas);
+        alert("Datos restaurados correctamente");
+        location.reload();
+    };
+    reader.readAsText(event.target.files[0]);
+}
+
+// --- LÓGICA DE NEGOCIO ---
 function guardarProv() {
     let provs = JSON.parse(localStorage.getItem('provs') || '[]');
     provs.push(document.getElementById('nombreProv').value);
@@ -72,7 +109,6 @@ function guardarProv() {
     location.reload();
 }
 
-// --- PRODUCTOS ---
 function guardarProd() {
     let prods = JSON.parse(localStorage.getItem('prods') || '[]');
     prods.push({
@@ -84,7 +120,6 @@ function guardarProd() {
     location.reload();
 }
 
-// --- VENTAS ---
 function actualizarSelect() {
     let prods = JSON.parse(localStorage.getItem('prods') || '[]');
     let sel = document.getElementById('selectProd');
@@ -95,7 +130,6 @@ function realizarVenta() {
     let index = document.getElementById('selectProd').value;
     let cant = parseInt(document.getElementById('cantVenta').value);
     let prods = JSON.parse(localStorage.getItem('prods'));
-    
     if(prods[index].stock >= cant) {
         prods[index].stock -= cant;
         let venta = { 
@@ -112,7 +146,6 @@ function realizarVenta() {
     } else { alert("¡Stock insuficiente!"); }
 }
 
-// --- CAJA ---
 function calcularCaja() {
     let ventas = JSON.parse(localStorage.getItem('ventas') || '[]');
     let hoy = new Date().toLocaleDateString();
@@ -120,7 +153,6 @@ function calcularCaja() {
     document.getElementById('resumenCaja').innerHTML = `<h4>Total ventas hoy: $${total}</h4>`;
 }
 
-// --- CARGA INICIAL ---
 function init() {
     let prods = JSON.parse(localStorage.getItem('prods') || '[]');
     let tbody = document.querySelector('#tablaProd tbody');
