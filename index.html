@@ -169,6 +169,9 @@ th {
     <input type="text" id="dirProv" placeholder="Dirección">
     <input type="text" id="prodProv" placeholder="Productos (separados por coma)">
     <button onclick="guardarProv()">Guardar Proveedor</button>
+    
+    <input type="text" id="buscarProv" onkeyup="filtrarProvs()" placeholder="🔍 Buscar proveedor...">
+    
     <table>
         <thead><tr><th>Nombre</th><th>Tel</th><th>Dir</th><th>Productos</th><th>Acciones</th></tr></thead>
         <tbody id="cuerpoTablaProv"></tbody>
@@ -176,6 +179,8 @@ th {
 
     <div id="panelPedido">
         <h3>Pedido a: <span id="nombreProvPedido"></span></h3>
+        <input type="text" id="buscarProdEnPedido" onkeyup="filtrarProdPedido()" placeholder="🔍 Buscar producto en este pedido...">
+        
         <div id="listaProductosPedido"></div>
         <button onclick="generarExcelPedido()" style="background:#28a745">📥 Descargar Pedido (Excel/CSV)</button>
         <button onclick="document.getElementById('panelPedido').style.display='none'" style="background:#666">Cerrar</button>
@@ -221,6 +226,25 @@ function verTab(id) {
     if(id === 'caja') calcularCaja();
 }
 
+// --- BUSCADORES ---
+function filtrarProvs() {
+    let filter = document.getElementById('buscarProv').value.toLowerCase();
+    let rows = document.getElementById('cuerpoTablaProv').getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        let text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? "" : "none";
+    }
+}
+
+function filtrarProdPedido() {
+    let filter = document.getElementById('buscarProdEnPedido').value.toLowerCase();
+    let rows = document.getElementById('tablaListaPedido').getElementsByTagName('tr');
+    for (let i = 1; i < rows.length; i++) { // Empezamos en 1 para saltar el encabezado
+        let text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? "" : "none";
+    }
+}
+
 // --- PROVEEDORES ---
 function guardarProv() {
     let prov = {
@@ -264,18 +288,18 @@ function editarProv(i) {
     mostrarProvs();
 }
 
-// --- PEDIDOS NUEVA FUNCIÓN ---
+// --- PEDIDOS ---
 let provActualIndex = -1;
 function abrirPanelPedido(i) {
     provActualIndex = i;
     let provs = JSON.parse(localStorage.getItem('provs'));
     let p = provs[i];
     document.getElementById('nombreProvPedido').innerText = p.nombre;
+    document.getElementById('buscarProdEnPedido').value = ''; // Limpiar buscador
     
-    // Obtener productos
     let lista = p.prods.split(',').map(s => s.trim()).filter(s => s !== "");
     
-    let html = '<table><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>';
+    let html = '<table id="tablaListaPedido"><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>';
     lista.forEach((item, idx) => {
         html += `<tr><td>${item}</td><td><input type="number" class="input-cant" data-prod="${item}" value="0" style="width:60px; padding:5px;"></td></tr>`;
     });
